@@ -2,7 +2,7 @@
 
 ## 🎮 How to Play
 
-1. **Start the Game** – Open the game in your browser [BlackJack](http://4along.jeremycasanova.me).
+1. **Start the Game** – Open the game in your browser [4Along](http://4along.jeremycasanova.me).
 
 
 ## Objective
