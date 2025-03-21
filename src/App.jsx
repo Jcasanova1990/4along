@@ -3,8 +3,7 @@ import { useMediaQuery } from 'react-responsive';
 import ThreeCanvas from './components/ThreeCanvas';
 import ReactDOM from 'react-dom/client';
 
-// Import your background image (you can place this in /src/img/ or wherever you want)
-import backgroundImage from '/src/img/bjbg.jpg';
+import backgroundImage from '../src/img/4alongbg.png';
 
 function App() {
   const isMobile = useMediaQuery({ query: '(max-width: 600px)' });
@@ -31,7 +30,7 @@ function App() {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundImage: `url(${backgroundImage})`, // Set background image here
+      backgroundImage: `url(${backgroundImage})`, 
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
@@ -46,8 +45,8 @@ function App() {
       textAlign: 'center',
       padding: '20px',
       fontSize: '18px',
-      backgroundColor: '#000', // Black background
-      color: 'red', // Red text
+      backgroundColor: '#000', 
+      color: 'red', 
     },
   };
 

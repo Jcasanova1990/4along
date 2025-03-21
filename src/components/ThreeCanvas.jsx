@@ -1,330 +1,222 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
+import useSound from "use-sound";
+import clickSound from "../sounds/click.mp3";
+import winSound from "../sounds/win.mp3";
+import loseSound from "../sounds/lose.mp3";
 
-// Import images
-const cardImages = import.meta.glob("/src/img/cards/*.png", { eager: true });
+const ROWS = 7;
+const COLS = 6;
+const EMPTY = null;
+const PLAYER_ONE = "red";
+const PLAYER_TWO = "blue";
 
-// Import sounds
-import shuffleSound from "/src/sounds/shuffle.mp3";
-import clickSound from "/src/sounds/click.mp3";
-import backgroundMusic from "/src/sounds/bg1.mp3";
+export default function Connect4() {
+  const [board, setBoard] = useState(Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY)));
+  const [currentPlayer, setCurrentPlayer] = useState(PLAYER_ONE);
+  const [gameMode, setGameMode] = useState(null);
+  const [winner, setWinner] = useState(null);
+  const [hoverColumn, setHoverColumn] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [playClick] = useSound(clickSound);
+  const [playWin] = useSound(winSound);
+  const [playLose] = useSound(loseSound);
 
-// Background image
-import tableBackground from "/src/img/table.jpg";
-
-const suits = ["spades", "hearts", "diamonds", "clubs"];
-const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-
-function createDeck() {
-    let deck = [];
-    for (let suit of suits) {
-        for (let value of values) {
-            deck.push({ suit, value });
-        }
+  useEffect(() => {
+    if (gameMode === "cpu" && currentPlayer === PLAYER_TWO && !winner) {
+      setTimeout(cpuMove, 500);
     }
-    return deck.sort(() => Math.random() - 0.5);
-}
+  }, [currentPlayer, gameMode, winner]);
 
-function calculateScore(hand) {
-    let score = 0;
-    let aceCount = 0;
-    hand.forEach(card => {
-        if (card.value === "A") {
-            aceCount++;
-            score += 11;
-        } else if (["J", "Q", "K"].includes(card.value)) {
-            score += 10;
-        } else {
-            score += parseInt(card.value);
+  const checkWin = (board) => {
+    const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        if (!board[row][col]) continue;
+        for (let [dx, dy] of directions) {
+          let count = 0;
+          for (let i = 0; i < 4; i++) {
+            const r = row + dx * i;
+            const c = col + dy * i;
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === board[row][col]) {
+              count++;
+            }
+          }
+          if (count === 4) {
+            setWinner(board[row][col]);
+            setShowModal(true);
+            board[row][col] === PLAYER_ONE ? playWin() : playLose();
+            return true;
+          }
         }
-    });
-    while (score > 21 && aceCount > 0) {
-        score -= 10;
-        aceCount--;
+      }
     }
-    return score;
-}
+    return false;
+  };
 
-function App() {
-    const [deck, setDeck] = useState([]);
-    const [playerHand, setPlayerHand] = useState([]);
-    const [dealerHand, setDealerHand] = useState([]);
-    const [playerScore, setPlayerScore] = useState(0);
-    const [dealerScore, setDealerScore] = useState(0);
-    const [gameOver, setGameOver] = useState(false);
-    const [result, setResult] = useState("");
-    const [showWelcome, setShowWelcome] = useState(true);
-    const [volume, setVolume] = useState(0.5);
-    const [isHovered, setIsHovered] = useState({
-        hit: false,
-        stand: false,
-        newGame: false,
-    });
+  const dropPiece = (col) => {
+    if (winner) return;
+    const newBoard = board.map(row => [...row]);
+    for (let row = ROWS - 1; row >= 0; row--) {
+      if (!newBoard[row][col]) {
+        newBoard[row][col] = currentPlayer;
+        setBoard(newBoard);
+        playClick();
 
-    const bgMusicRef = useRef(new Audio(backgroundMusic));
-    bgMusicRef.current.loop = true;
-
-    useEffect(() => {
-        bgMusicRef.current.volume = volume;
-        if (!showWelcome) bgMusicRef.current.play();
-    }, [volume, showWelcome]);
-
-    const playSound = (sound) => {
-        const audio = new Audio(sound);
-        audio.volume = volume;
-        audio.play();
-    };
-
-    function dealCard(deck) {
-        const newDeck = [...deck];
-        const card = newDeck.pop();
-        return { card, newDeck };
+        if (!checkWin(newBoard)) {
+          setCurrentPlayer((prev) => (prev === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE));
+        }
+        return;
+      }
     }
+  };
 
-    const startGame = () => {
-        playSound(shuffleSound);
+  const cpuMove = () => {
+    const availableCols = board[0].map((_, col) => col).filter(col => !board[0][col]);
+    if (availableCols.length > 0) {
+      dropPiece(availableCols[Math.floor(Math.random() * availableCols.length)]);
+    }
+  };
 
-        const newDeck = createDeck();
-        const playerStart = [newDeck.pop(), newDeck.pop()];
-        const dealerStart = [newDeck.pop(), newDeck.pop()];
+  const resetGame = () => {
+    playClick();
+    setBoard(Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY)));
+    setCurrentPlayer(PLAYER_ONE);
+    setWinner(null);
+    setShowModal(false);
+  };
 
-        setDeck(newDeck);
-        setPlayerHand(playerStart);
-        setDealerHand(dealerStart);
-        setPlayerScore(calculateScore(playerStart));
-        setDealerScore(calculateScore(dealerStart));
-        setGameOver(false);
-        setResult("");
-    };
+  const returnHome = () => {
+    playClick();
+    setGameMode(null);
+    resetGame();
+    setHoverColumn(null);
+  };
 
-    const handleHit = () => {
-        if (gameOver) return;
-        playSound(clickSound);
-
-        const { card, newDeck } = dealCard(deck);
-        const updatedHand = [...playerHand, card];
-        const newScore = calculateScore(updatedHand);
-
-        setDeck(newDeck);
-        setPlayerHand(updatedHand);
-        setPlayerScore(newScore);
-
-        if (newScore > 21) {
-            setResult("You Busted!");
-            setGameOver(true);
-        }
-    };
-
-    const handleStand = () => {
-        if (gameOver) return;
-        playSound(clickSound);
-
-        let currentDeck = [...deck];
-        let updatedDealerHand = [...dealerHand];
-        let newScore = dealerScore;
-
-        while (newScore < 17) {
-            const { card, newDeck } = dealCard(currentDeck);
-            updatedDealerHand.push(card);
-            newScore = calculateScore(updatedDealerHand);
-            currentDeck = newDeck;
-        }
-
-        setDeck(currentDeck);
-        setDealerHand(updatedDealerHand);
-        setDealerScore(newScore);
-        setGameOver(true);
-
-        if (newScore > 21 || playerScore > newScore) {
-            setResult("You Win!");
-        } else if (playerScore < newScore) {
-            setResult("Dealer Wins!");
-        } else {
-            setResult("It's a Tie!");
-        }
-    };
-
-    const startFromWelcome = () => {
-        setShowWelcome(false);
-        startGame();
-    };
-
+  if (!gameMode) {
     return (
-        <div style={{ ...styles.game, backgroundImage: `url(${tableBackground})` }}>
-            {showWelcome ? (
-                <div style={styles.welcomeScreen}>
-                    <h1>Welcome to Blackjack!</h1>
-                    <button
-                        style={{
-                            ...styles.button,
-                            ...(isHovered.newGame ? styles.buttonHover : {})
-                        }}
-                        onMouseEnter={() => setIsHovered({ ...isHovered, newGame: true })}
-                        onMouseLeave={() => setIsHovered({ ...isHovered, newGame: false })}
-                        onClick={startFromWelcome}
-                    >
-                        Start Game
-                    </button>
-                </div>
-            ) : (
-                <>
-                    <h1 style={styles.title}>Blackjack</h1>
-
-                    <div style={styles.section}>
-                        <h2>Dealer - Points: {dealerScore}</h2>
-                        <div style={styles.hand}>
-                            {dealerHand.map((card, index) => {
-                                const fileName = `/src/img/cards/${card.value.toLowerCase()}_of_${card.suit}.png`;
-                                return (
-                                    <img
-                                        key={index}
-                                        style={styles.card}
-                                        src={cardImages[fileName]?.default || cardImages[fileName]}
-                                        alt={`${card.value} of ${card.suit}`}
-                                    />
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div style={styles.section}>
-                        <h2>Player - Points: {playerScore}</h2>
-                        <div style={styles.hand}>
-                            {playerHand.map((card, index) => {
-                                const fileName = `/src/img/cards/${card.value.toLowerCase()}_of_${card.suit}.png`;
-                                return (
-                                    <img
-                                        key={index}
-                                        style={styles.card}
-                                        src={cardImages[fileName]?.default || cardImages[fileName]}
-                                        alt={`${card.value} of ${card.suit}`}
-                                    />
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div style={styles.controls}>
-                        <button
-                            style={{
-                                ...styles.button,
-                                ...(isHovered.hit ? styles.buttonHover : {})
-                            }}
-                            onMouseEnter={() => setIsHovered({ ...isHovered, hit: true })}
-                            onMouseLeave={() => setIsHovered({ ...isHovered, hit: false })}
-                            onClick={handleHit}
-                            disabled={gameOver}
-                        >
-                            Hit
-                        </button>
-
-                        <button
-                            style={{
-                                ...styles.button,
-                                ...(isHovered.stand ? styles.buttonHover : {})
-                            }}
-                            onMouseEnter={() => setIsHovered({ ...isHovered, stand: true })}
-                            onMouseLeave={() => setIsHovered({ ...isHovered, stand: false })}
-                            onClick={handleStand}
-                            disabled={gameOver}
-                        >
-                            Stand
-                        </button>
-
-                        <button
-                            style={{
-                                ...styles.button,
-                                ...(isHovered.newGame ? styles.buttonHover : {})
-                            }}
-                            onMouseEnter={() => setIsHovered({ ...isHovered, newGame: true })}
-                            onMouseLeave={() => setIsHovered({ ...isHovered, newGame: false })}
-                            onClick={startGame}
-                        >
-                            New Game
-                        </button>
-                    </div>
-
-                    <h2>{result}</h2>
-
-                    <div style={styles.volumeControl}>
-                        <label>Volume:</label>
-                        <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(Number(e.target.value))} />
-                    </div>
-                </>
-            )}
-        </div>
+      <div className="four-along">
+        <h1>4Along</h1>
+        <button className="button" onClick={() => { playClick(); setGameMode("pvp"); resetGame(); }}>Player vs Player</button>
+        <button className="button" onClick={() => { playClick(); setGameMode("cpu"); resetGame(); }}>Player vs CPU</button>
+      </div>
     );
+  }
+
+  return (
+    <div key={gameMode} className="four-along">
+      <h1>4Along</h1>
+      {showModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close-btn" onClick={() => { playClick(); setShowModal(false); }}>&times;</span>
+            <h2>{winner} Wins!</h2>
+          </div>
+        </div>
+      )}
+      <Canvas shadows camera={{ position: [0, 5, 7.5], fov: 100 }}>
+        <ambientLight intensity={0.5} />
+        <spotLight position={[15, 20, 10]} angle={0.3} penumbra={1} castShadow />
+        <group scale={[0.8, 0.8, 0.8]} position={[-(COLS * 1.2), -(ROWS * 1.2), 0]}>
+          {board.map((row, rowIndex) =>
+            row.map((cell, colIndex) => (
+              <mesh
+                key={`${rowIndex}-${colIndex}`}
+                position={[colIndex * 3, (ROWS - rowIndex - 1) * 3, 0]}
+                rotation={[THREE.MathUtils.degToRad(-15), 0, 0]}
+                castShadow
+                onClick={() => dropPiece(colIndex)}
+                onPointerEnter={() => setHoverColumn(colIndex)}
+                onPointerLeave={() => setHoverColumn(null)}
+              >
+                <cylinderGeometry args={[1.2, 1.2, 0.3, 32]} />
+                <meshStandardMaterial color={cell || (hoverColumn === colIndex ? "white" : "gray")} />
+              </mesh>
+            ))
+          )}
+        </group>
+      </Canvas>
+      <button className="buttonr" onClick={resetGame}>Restart</button>
+      <button className="buttonm" onClick={returnHome}>Main Menu</button>
+    </div>
+  );
 }
 
+const styles = document.createElement("style");
+styles.innerHTML = `
+  .four-along {
+    height: 110vh;
+    width: 210vh;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
-const styles = {
-    game: {
-        fontFamily: "'Pacifico', cursive",
-        textAlign: "center",
-        color: "white",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        minHeight: "100vh",
-        minWidth: "70vw",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        position: "relative",
-    },
-    hand: {
-        display: "flex",
-        gap: "10px",
-    },
-    card: {
-        width: "80px",
-    },
-    controls: {
-        display: "flex",
-        gap: "10px",
-        marginTop: "20px",
-    },
-    button: {
-        padding: "10px 20px",
-        fontSize: "16px",
-        cursor: "pointer",
-        backgroundColor: "black",
-        color: "white",
-        border: "2px solid white",
-        borderRadius: "10px",
-        transition: "all 0.3s ease",
-    },
-    buttonHover: {
-        backgroundColor: "white",
-        color: "black",
-    },
-    volumeControl: {
-        marginTop: "20px",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-    },
-    welcomeScreen: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "rgba(0,0,0,0.8)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    startButton: {
-        padding: "15px 30px",
-        fontSize: "20px",
-    },
-    section: {
-        marginBottom: "20px",
-    },
-    title: {
-        margin: "10px 0",
-    }
-};
+  h1 {
+    font-family: Arial, sans-serif;
+    margin-bottom: 20px;
+  }
 
-export default App;
+  .button, .buttonr, .buttonm {
+    background-color: red;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+
+  .buttonr {
+    margin-left: 20px;
+  }
+
+  .buttonm {
+    margin-left: 20px;
+  }
+
+  canvas {
+    width: 166vw;
+    height: 66vh;
+    display: block;
+    margin: auto;
+    cursor: pointer;
+  }
+
+  /* Modal Styles */
+  .modal {
+    font-size: 40px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    z-index: 1000;
+    color: green;
+  }
+
+  .modal-content {
+    position: relative;
+  }
+
+  .modal-content h2 {
+    margin: 0;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: -20px;
+    right: -15px;
+    font-size: 40px;
+    cursor: pointer;
+  }
+`;
+
+document.head.appendChild(styles);

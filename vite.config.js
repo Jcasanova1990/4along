@@ -10,8 +10,8 @@ export default defineConfig({
     react(),
     viteStaticCopy({
       targets: [
-        { src: 'src/img/*', dest: 'img' },       // Copy images to public/img
-        { src: 'src/sounds/*', dest: 'sounds' },  // Copy sounds to public/sounds
+        { src: 'src/img/*', dest: 'img' },       
+        { src: 'src/sounds/*', dest: 'sounds' },  
       ],
     }),
   ],
@@ -19,16 +19,16 @@ export default defineConfig({
     port: process.env.VITE_PORT || 5173,
   },
   build: {
-    outDir: 'public/dist',  // Build output should go to dist folder
-    emptyOutDir: false,     // Keeps previous files in dist
-    assetsDir: 'assets',    // All build assets (like JS, CSS) will go into dist/assets
+    outDir: 'public/dist', 
+    emptyOutDir: false,     
+    assetsDir: 'assets',   
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
           if (assetInfo.name && assetInfo.name.endsWith('.mp3')) {
-            return 'sounds/[name]';  // Ensure sound files stay in sounds folder
+            return 'sounds/[name]';  
           }
-          return 'assets/[name]';  // Other assets like JS and CSS go in assets
+          return 'assets/[name]';  
         },
       },
     },
