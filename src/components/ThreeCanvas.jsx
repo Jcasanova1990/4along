@@ -9,8 +9,8 @@ import loseSound from "../sounds/lose.mp3";
 const ROWS = 7;
 const COLS = 6;
 const EMPTY = null;
-const PLAYER_ONE = "red";
-const PLAYER_TWO = "blue";
+const PLAYER_ONE = "Red";
+const PLAYER_TWO = "Blue";
 
 export default function Connect4() {
   const [board, setBoard] = useState(Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY)));
@@ -156,27 +156,101 @@ styles.innerHTML = `
     justify-content: center;
   }
 
-  h1 {
-    font-family: Arial, sans-serif;
-    margin-bottom: 20px;
-  }
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
 
-  .button, .buttonr, .buttonm {
-    background-color: red;
+h1 {
+    font-family: Arial, sans-serif;
+    margin-top: 100px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 48px;
+    text-shadow: 0 0 15px orange;
+    background: linear-gradient(to right, white, black, white);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientAnimation 3s linear infinite alternate;
+}
+
+
+
+ .button {
+    border-radius: 10px; 
+    background-color: black;
+    color: white;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
     margin-top: 10px;
     margin-bottom: 20px;
-  }
+    border: none;
+    box-shadow: 0 0 10px orange;
+    transition: background-color 0.3s, color 0.3s, transform 0.1s;
+}
 
-  .buttonr {
-    margin-left: 20px;
-  }
+.button:hover {
+    background-color: white;
+    color: black;
+    transform: translateY(-3px);
+    
+}
 
-  .buttonm {
-    margin-left: 20px;
-  }
+.button:active {
+    transform: translateY(1px);
+}
+
+.buttonr {
+    border-radius: 10px;
+    background-color: black;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border: none;
+    box-shadow: 0 0 10px orange;
+    transition: background-color 0.3s, color 0.3s, transform 0.1s;
+}
+
+.buttonr:hover {
+    background-color: white;
+    color: black;
+    transform: translateY(-3px);
+}
+
+.buttonr:active {
+    transform: translateY(1px);
+}
+
+.buttonm {
+    border-radius: 10px; 
+    background-color: black;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-bottom: 90px;
+    border: none;
+    box-shadow: 0 0 10px orange;
+    transition: background-color 0.3s, color 0.3s, transform 0.1s;
+}
+
+.buttonm:hover {
+    background-color: white;
+    color: black;
+    transform: translateY(-3px);
+}
+
+.buttonm:active {
+    transform: translateY(1px);
+}
+
+
 
   canvas {
     width: 166vw;
@@ -199,7 +273,7 @@ styles.innerHTML = `
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
     text-align: center;
     z-index: 1000;
-    color: green;
+    color: black;
   }
 
   .modal-content {
@@ -211,12 +285,18 @@ styles.innerHTML = `
   }
 
   .close-btn {
+    color: black;
     position: absolute;
-    top: -20px;
-    right: -15px;
+    top: -29px;
+    right: -20px;
     font-size: 40px;
     cursor: pointer;
-  }
+    transition: color 0.3s;
+}
+
+.close-btn:hover {
+    color: red;
+}
 `;
 
 document.head.appendChild(styles);
