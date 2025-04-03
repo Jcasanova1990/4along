@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import useSound from "use-sound";
-import clickSound from "src/sounds/click.mp3";
-import winSound from "src/sounds/win.mp3";
-import loseSound from "src/sounds/lose.mp3";
+const clickSound = "/sounds/click.mp3";
+const winSound = "/sounds/win.mp3";
+const loseSound = "/sounds/lose.mp3";
 
 const ROWS = 7;
 const COLS = 6;
